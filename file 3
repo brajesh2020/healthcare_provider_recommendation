@@ -1,0 +1,39 @@
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.model_selection import train_test_split
+
+# Load the MovieLens dataset (you can download it from the MovieLens website)
+# Assuming you have two CSV files: 'movies.csv' and 'ratings.csv'
+movies = pd.read_csv('movies.csv')
+ratings = pd.read_csv('ratings.csv')
+
+# Merge movies and ratings datasets
+movie_ratings = pd.merge(ratings, movies, on='movieId')
+
+# Create a user-item matrix
+user_item_matrix = movie_ratings.pivot_table(index='userId', columns='title', values='rating')
+
+# Fill missing values with 0
+user_item_matrix = user_item_matrix.fillna(0)
+
+# Split the dataset into a training and testing set
+train_data, test_data = train_test_split(user_item_matrix, test_size=0.2)
+
+# Calculate the similarity between users using cosine similarity
+user_similarity = cosine_similarity(train_data)
+
+# Function to get movie recommendations for a user
+def get_recommendations(user_id):
+    user_ratings = train_data.iloc[user_id - 1]
+    similar_users = user_similarity[user_id - 1]
+    similar_users = similar_users.reshape(-1, 1)
+    recommendations = train_data.columns.to_frame().reset_index(drop=True)
+    recommendations['score'] = similar_users.T.dot(train_data).values
+    recommendations = recommendations.sort_values(by='score', ascending=False)
+    return recommendations
+
+# Example: Get recommendations for user with user_id 1
+user_id = 1
+user_recommendations = get_recommendations(user_id)
+print(f"Recommendations for User {user_id}:")
+print(user_recommendations.head(10))
