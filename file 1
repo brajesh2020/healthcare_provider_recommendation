@@ -1,0 +1,43 @@
+from surprise import Dataset, Reader
+from surprise import KNNBasic
+from surprise.model_selection import train_test_split
+from surprise import accuracy
+
+# Load the MovieLens dataset (replace 'path_to_dataset' with the actual path)
+reader = Reader(line_format='user item rating timestamp', sep=',', rating_scale=(1, 5))
+data = Dataset.load_from_file('path_to_dataset', reader=reader)
+
+# Split the dataset into a training set and a test set
+trainset, testset = train_test_split(data, test_size=0.25)
+
+# Create and train a basic KNN collaborative filtering model
+sim_options = {
+    'name': 'cosine',
+    'user_based': False  # Item-based filtering
+}
+algo = KNNBasic(sim_options=sim_options)
+algo.fit(trainset)
+
+# Make predictions on the test set
+predictions = algo.test(testset)
+
+# Evaluate the model's performance (RMSE and MAE)
+rmse = accuracy.rmse(predictions)
+mae = accuracy.mae(predictions)
+
+print(f'RMSE: {rmse}')
+print(f'MAE: {mae}')
+
+# Recommend items for a specific user (replace 'user_id' with the user you want to recommend for)
+user_id = 'user_id'
+items_to_recommend = []
+for item_id, _ in data.build_full_trainset().ur[user_id]:
+    if item_id not in trainset.ur[user_id]:
+        items_to_recommend.append(item_id)
+
+top_n = algo.get_top_n(predictions, n=10)  # Get top-N recommendations
+user_recommendations = top_n[user_id]
+
+print(f'Top 10 Recommendations for User {user_id}:')
+for item_id, score in user_recommendations:
+    print(f'Item ID: {item_id}, Predicted Rating: {score}')
