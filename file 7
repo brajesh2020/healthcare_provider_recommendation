@@ -1,0 +1,43 @@
+import pandas as pd
+from surprise import SVD, Reader, Dataset, accuracy
+from surprise.model_selection import train_test_split
+from collections import defaultdict
+
+# Step 1: Data Preprocessing (Assuming you have a dataset with columns 'user_id', 'hotel_id', and 'rating')
+data = pd.read_csv('hotel_data.csv')
+
+# Step 3: Data Transformation
+reader = Reader(rating_scale=(1, 5))
+data = Dataset.load_from_df(data[['user_id', 'hotel_id', 'rating']], reader)
+
+# Step 4: Building the Recommendation System
+trainset, testset = train_test_split(data, test_size=0.2)  # Splitting data into train and test sets
+algo = SVD()  # Initializing the SVD algorithm
+algo.fit(trainset)  # Training the algorithm
+
+# Step 5: Making Recommendations (e.g., for a specific user)
+user_id = 'user_1'  # Replace with an actual user ID
+
+# Define a function to get top N hotel recommendations for a user
+def get_top_n(predictions, n=10):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
+
+    # Sort predictions for each user and retrieve the top N recommendations
+    for uid, user_ratings in top_n.items():
+        user_ratings.sort(key=lambda x: x[1], reverse=True)
+        top_n[uid] = user_ratings[:n]
+    
+    return top_n
+
+# Get top N recommendations for the specified user
+testset = trainset.build_anti_testset()  # All possible user-item pairs not in the training set
+predictions = algo.test(testset)
+top_n_recommendations = get_top_n(predictions, n=10)
+
+# Display the top N recommendations for the user
+for user_id, user_ratings in top_n_recommendations.items():
+    print(f"User {user_id} Recommendations:")
+    for hotel_id, estimated_rating in user_ratings:
+        print(f"Hotel ID: {hotel_id}, Predicted Rating: {estimated_rating:.2f}")
