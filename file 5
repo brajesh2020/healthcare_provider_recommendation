@@ -1,0 +1,11 @@
+import pandas as pd
+
+df = pd.read_csv('https://data.cms.gov/provider-summary-by-type-of-service/medicare-physician-other-practitioners/medicare-physician-other-practitioners-by-provider-and-service/data?query=%7B%22filters%22%3A%7B%22list%22%3A%5B%7B%22conditions%22%3A%5B%7B%22column%22%3A%7B%22value%22%3A%22Rndrng_Prvdr_State_Abrvtn%22%7D%2C%22comparator%22%3A%7B%22value%22%3A%22%3D%22%7D%2C%22filterValue%22%3A%5B%22CA%22%5D%7D%5D%7D%5D%2C%22rootConjunction%22%3A%7B%22value%22%3A%22AND%22%7D%7D%2C%22keywords%22%3A%22%22%2C%22offset%22%3A0%2C%22limit%22%3A10%2C%22sort%22%3A%7B%22sortBy%22%3A%22Rndrng_Prvdr_State_Abrvtn%22%2C%22sortOrder%22%3A%22DESC%22%7D%2C%22columns%22%3A%5B%5D%7D')
+
+# Remove any missing values.
+df = df.dropna()
+
+# Convert the data to a format that is compatible with the recommendation system algorithm we are using.
+# For example, we can convert the `State` column to a categorical variable.
+df['State'] = df['State'].astype('category')
+#Train the recommendation system. We can use a variety of different algorithms to train a recommendation system. One popular algorithm is collaborative filtering, which recommends items to users based on the ratings of other users with similar preferences.
