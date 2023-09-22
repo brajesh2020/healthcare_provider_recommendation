@@ -1,0 +1,51 @@
+import pandas as pd
+from scipy.sparse import csr_matrix
+from sklearn.preprocessing import LabelEncoder
+from surprise import SVD, Reader, Dataset, cross_validate
+
+# Step 1: Data Preprocessing
+# Load the Medicare dataset (replace 'medicare_data.csv' with your dataset file)
+data = pd.read_csv('medicare_data.csv')
+
+# Data cleaning and preprocessing as needed
+
+# Step 2: Data Exploration
+# Explore the dataset
+print(data.head())
+
+# Step 3: Data Transformation
+# Label encode users and providers
+user_encoder = LabelEncoder()
+provider_encoder = LabelEncoder()
+data['User_ID'] = user_encoder.fit_transform(data['Beneficiary_ID'])
+data['Provider_ID'] = provider_encoder.fit_transform(data['NPI'])
+
+# Create the user-item interaction matrix
+interaction_matrix = csr_matrix((data['Rating'], (data['User_ID'], data['Provider_ID'])))
+
+# Step 4: Building the Recommendation System
+# Load the dataset into Surprise format
+reader = Reader(rating_scale=(1, 5))
+data = Dataset.load_from_df(data[['User_ID', 'Provider_ID', 'Rating']], reader)
+
+# Initialize and train the SVD algorithm
+algo = SVD()
+cross_validate(algo, data, measures=['RMSE', 'MAE'], cv=5, verbose=True)
+
+# Step 5: Making Recommendations
+# Replace 'user_id' with an actual user ID for recommendations
+user_id = 0  # Example user ID
+provider_ids = list(range(interaction_matrix.shape[1]))  # All provider IDs
+recommendations = []
+
+for provider_id in provider_ids:
+    predicted_rating = algo.predict(user_id, provider_id).est
+    recommendations.append((provider_encoder.inverse_transform([provider_id])[0], predicted_rating))
+
+# Sort recommendations by predicted rating in descending order
+recommendations.sort(key=lambda x: x[1], reverse=True)
+
+# Display the top N recommendations (e.g., top 10)
+top_n = 10
+for i, (provider_id, predicted_rating) in enumerate(recommendations[:top_n]):
+    print(f"Recommendation {i + 1}: Provider ID {provider_id}, Predicted Rating: {predicted_rating:.2f}")
